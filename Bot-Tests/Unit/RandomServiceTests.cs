@@ -6,7 +6,7 @@ namespace Bot.Tests.Unit
 {
     public class RandomServiceTests
     {
-        private readonly IRandomService randomService;        private readonly Random random;
+        private readonly IRandomService randomService;
 
         public RandomServiceTests()
         {

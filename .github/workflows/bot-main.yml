@@ -1,11 +1,11 @@
+
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: CD
 
-# Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the main branch
-  pull_request:
+  push:
     branches: [ main ]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -44,24 +44,26 @@ jobs:
         - run: git fetch --unshallow
         - run: dotnet tool install --global dotnet-sonarscanner
         - run: | 
-            dotnet sonarscanner begin -o:"rps-ultimate" -k:"RPS-Ultimate__Bot-Svc\" -d:sonar.login="${{ secrets.SONAR_TOKEN }}" -d:sonar.host.url='https://sonarcloud.io/'
+            dotnet sonarscanner begin -o:"rps-ultimate" -k:"RPS-Ultimate_Bot-Svc" -d:sonar.login="${{ secrets.SONAR_TOKEN }}" -d:sonar.host.url='https://sonarcloud.io/'
             dotnet build
             dotnet test -p:CollectCoverage=true -p:CoverletOutputFormat=opencover --logger trx
             dotnet sonarscanner end -d:sonar.login="${{ secrets.SONAR_TOKEN }}"
           env: 
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    # # Steps represent a sequence of tasks that will be executed as part of the job
-    # steps:
-    #   # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    #   - uses: actions/checkout@v2
-
-    #   # Runs a single command using the runners shell
-    #   - name: Run a one-line script
-    #     run: echo Hello, world!
-
-    #   # Runs a set of commands using the runners shell
-    #   - name: Run a multi-line script
-    #     run: |
-    #       echo Add other actions to build,
-    #       echo test, and deploy your project.
+    
+  package:
+      defaults:
+        run:
+          working-directory: ./
+      env:
+        DOCKER_LOGIN: ${{ secrets.DOCKER_LOGIN }}
+        DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      needs: [analyze]
+      runs-on: ubuntu-20.04
+      steps:
+        - uses: actions/checkout@v2.3.1
+        - run: docker login --username ${DOCKER_LOGIN} --password ${DOCKER_TOKEN}
+        - run: docker image build -t bot-svc .
+        - run: docker image tag bot-svc rpsultimate/bot-svc
+        - run: docker image push rpsultimate/bot-svc
+        - run: docker logout

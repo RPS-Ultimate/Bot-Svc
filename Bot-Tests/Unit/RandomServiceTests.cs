@@ -19,7 +19,6 @@ namespace Bot.Tests.Unit
             var result = randomService.GenerateNumber();
 
             Assert.IsType<int>(result);
-            Assert.True(result < 4);
         }
     }
 }
